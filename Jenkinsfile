@@ -1,7 +1,8 @@
 pipeline {
   agent any
   environment {
-    IMAGE_NAME = 'D4nndaD4nn/simple-app'
+    // Menggunakan huruf kecil sesuai akun Docker Hub yang benar (dannd4dann)
+    IMAGE_NAME = 'dannd4dann/simple-app'
     REGISTRY_CREDENTIALS = 'dockerhub-credentials'
   }
   stages {
@@ -18,20 +19,12 @@ pipeline {
     }
     stage('Push Docker Image') {
       steps {
-        withCredentials([usernamePassword(credentialsId: env.REGISTRY_CREDENTIALS,
-            usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          // Menggunakan blok powershell murni dengan fungsi .Trim() untuk membersihkan spasi/newline tersembunyi
-          powershell '''
-            $user = "$env:DOCKER_USER".Trim()
-            $pass = "$env:DOCKER_PASS".Trim()
-
-            # Lakukan login dengan token yang sudah dibersihkan
-            $pass | docker login -u $user --password-stdin
-
-            # Jalankan tag dan push image ke Docker Hub
-            docker push "${env:IMAGE_NAME}:${env:BUILD_NUMBER}"
-            docker tag "${env:IMAGE_NAME}:${env:BUILD_NUMBER}" "${env:IMAGE_NAME}:latest"
-            docker push "${env:IMAGE_NAME}:latest"
+        // Menggunakan block withDockerRegistry bawaan Jenkins yang aman dari error parsing Windows CLI
+        withDockerRegistry(credentialsId: env.REGISTRY_CREDENTIALS, url: '') {
+          bat '''
+            docker push %IMAGE_NAME%:%BUILD_NUMBER%
+            docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
+            docker push %IMAGE_NAME%:latest
           '''
         }
       }
