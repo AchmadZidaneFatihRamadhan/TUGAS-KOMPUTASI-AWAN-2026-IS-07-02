@@ -20,11 +20,18 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS,
             usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          bat '''
-            echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-            docker push %IMAGE_NAME%:%BUILD_NUMBER%
-            docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
-            docker push %IMAGE_NAME%:latest
+          powershell '''
+            # Membersihkan spasi/newline dari token kredensial
+            $user = $env:DOCKER_USER.Trim()
+            $pass = $env:DOCKER_PASS.Trim()
+
+            # Login menggunakan password-stdin di PowerShell
+            $pass | docker login -u $user --password-stdin
+
+            # Push dan Tag Image
+            docker push "${env:IMAGE_NAME}:${env:BUILD_NUMBER}"
+            docker tag "${env:IMAGE_NAME}:${env:BUILD_NUMBER}" "${env:IMAGE_NAME}:latest"
+            docker push "${env:IMAGE_NAME}:latest"
           '''
         }
       }
