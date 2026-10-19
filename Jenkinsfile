@@ -18,13 +18,14 @@ pipeline {
     }
     stage('Push Docker Image') {
       steps {
-        // Menggunakan blok docker bawaan Jenkins yang otomatis login dan push aman
-        script {
-          docker.withRegistry('https://index.docker.io/v1/', "${REGISTRY_CREDENTIALS}") {
-            def customImage = docker.image("${IMAGE_NAME}:${BUILD_NUMBER}")
-            customImage.push()
-            customImage.push('latest')
-          }
+        withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS,
+            usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          bat '''
+            docker login -u "%DOCKER_USER%" -p "%DOCKER_PASS%"
+            docker push %IMAGE_NAME%:%BUILD_NUMBER%
+            docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
+            docker push %IMAGE_NAME%:latest
+          '''
         }
       }
     }
