@@ -18,8 +18,8 @@ pipeline {
     }
     stage('Push Docker Image') {
       steps {
-        // Diperbaiki: Hanya menggunakan credentialsId tanpa toolName
-        withDockerRegistry(credentialsId: env.REGISTRY_CREDENTIALS) {
+        // Menambahkan parameter url: '' agar valid di plugin Jenkins Anda
+        withDockerRegistry(credentialsId: env.REGISTRY_CREDENTIALS, url: '') {
           bat '''
             docker push %IMAGE_NAME%:%BUILD_NUMBER%
             docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
