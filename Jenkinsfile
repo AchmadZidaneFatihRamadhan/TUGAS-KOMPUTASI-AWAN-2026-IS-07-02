@@ -18,20 +18,12 @@ pipeline {
     }
     stage('Push Docker Image') {
       steps {
-        withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS,
-            usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          powershell '''
-            # Membersihkan seluruh spasi, enter, atau karakter tersembunyi
-            $cleanUser = "$env:DOCKER_USER".Trim()
-            $cleanPass = "$env:DOCKER_PASS".Trim().Replace("`r", "").Replace("`n", "")
-            
-            # Login ke Docker Hub menggunakan password-stdin yang sudah dibersihkan
-            $cleanPass | docker login -u "$cleanUser" --password-stdin
-            
-            # Push dan Tag Image
-            docker push "${env:IMAGE_NAME}:${env:BUILD_NUMBER}"
-            docker tag "${env:IMAGE_NAME}:${env:BUILD_NUMBER}" "${env:IMAGE_NAME}:latest"
-            docker push "${env:IMAGE_NAME}:latest"
+        withCredentials([string(credentialsId: REGISTRY_CREDENTIALS, variable: 'DOCKER_PASS')]) {
+          bat '''
+            echo %DOCKER_PASS% | docker login -u D4nndaD4nn --password-stdin
+            docker push D4nndaD4nn/simple-app:%BUILD_NUMBER%
+            docker tag D4nndaD4nn/simple-app:%BUILD_NUMBER% D4nndaD4nn/simple-app:latest
+            docker push D4nndaD4nn/simple-app:latest
           '''
         }
       }
