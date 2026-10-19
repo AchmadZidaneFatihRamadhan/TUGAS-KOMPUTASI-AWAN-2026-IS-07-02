@@ -21,7 +21,7 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS,
             usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           bat '''
-            docker login -u "%DOCKER_USER%" -p "%DOCKER_PASS%"
+            echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
             docker push %IMAGE_NAME%:%BUILD_NUMBER%
             docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
             docker push %IMAGE_NAME%:latest
