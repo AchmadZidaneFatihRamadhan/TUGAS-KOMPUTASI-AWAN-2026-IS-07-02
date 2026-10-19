@@ -21,7 +21,16 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS,
             usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           bat '''
-            echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+            REM Menyimpan password ke file sementara agar tidak korupsi karakter
+            echo %DOCKER_PASS%> docker_token.txt
+            
+            REM Melakukan login menggunakan file password-stdin
+            docker login -u %DOCKER_USER% --password-stdin < docker_token.txt
+            
+            REM Menghapus file token setelah digunakan demi keamanan
+            del docker_token.txt
+            
+            REM Push dan Tag Image
             docker push %IMAGE_NAME%:%BUILD_NUMBER%
             docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
             docker push %IMAGE_NAME%:latest
