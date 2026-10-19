@@ -3,7 +3,6 @@ pipeline {
   environment {
     IMAGE_NAME = 'dannd4dann/simple-app'
     REGISTRY_CREDENTIALS = 'dockerhub-credentials'
-    // Kunci utama untuk Windows Service: memaksa Docker melewati pencarian context "desktop-linux" yang error
     DOCKER_HOST = 'npipe:////./pipe/docker_engine'
   }
   stages {
@@ -20,8 +19,19 @@ pipeline {
     }
     stage('Push Docker Image') {
       steps {
-        withDockerRegistry(credentialsId: env.REGISTRY_CREDENTIALS, url: '') {
+        withCredentials([usernamePassword(credentialsId: env.REGISTRY_CREDENTIALS,
+            usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           bat '''
+            REM Menulis token password ke file tanpa newline/carriage return
+            <nul set /p=%DOCKER_PASS%> docker_token.txt
+
+            REM Login Docker Hub menggunakan --password-stdin yang aman dari malformed header
+            docker login -u %DOCKER_USER% --password-stdin < docker_token.txt
+
+            REM Hapus file token demi keamanan
+            del docker_token.txt
+
+            REM Push dan Tag Image ke Docker Hub
             docker push %IMAGE_NAME%:%BUILD_NUMBER%
             docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
             docker push %IMAGE_NAME%:latest
