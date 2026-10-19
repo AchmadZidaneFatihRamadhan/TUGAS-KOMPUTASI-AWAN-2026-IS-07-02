@@ -20,15 +20,18 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: env.REGISTRY_CREDENTIALS,
             usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          bat '''
-            REM Menulis autentikasi langsung ke config.json Docker untuk menghindari malformed header CLI Windows
-            mkdir "%USERPROFILE%\\.docker" 2>nul
-            powershell -Command "$auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(\"$env:DOCKER_USER:$env:DOCKER_PASS\")); $config = '{\"auths\": {\"https://index.docker.io/v1/\": {\"auth\": \"' + $auth + '\"}}}'; Set-Content -Path \"$env:USERPROFILE\\.docker\\config.json\" -Value $config"
+          // Menggunakan blok powershell murni dengan fungsi .Trim() untuk membersihkan spasi/newline tersembunyi
+          powershell '''
+            $user = "$env:DOCKER_USER".Trim()
+            $pass = "$env:DOCKER_PASS".Trim()
 
-            REM Push dan Tag Image ke Docker Hub
-            docker push %IMAGE_NAME%:%BUILD_NUMBER%
-            docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
-            docker push %IMAGE_NAME%:latest
+            # Lakukan login dengan token yang sudah dibersihkan
+            $pass | docker login -u $user --password-stdin
+
+            # Jalankan tag dan push image ke Docker Hub
+            docker push "${env:IMAGE_NAME}:${env:BUILD_NUMBER}"
+            docker tag "${env:IMAGE_NAME}:${env:BUILD_NUMBER}" "${env:IMAGE_NAME}:latest"
+            docker push "${env:IMAGE_NAME}:latest"
           '''
         }
       }
