@@ -1,7 +1,7 @@
 pipeline {
   agent any
   environment {
-    IMAGE_NAME = 'D4nndaD4nn/simple-app'  // Sesuaikan persis dengan huruf besar/kecil akun Docker Hub Anda
+    IMAGE_NAME = 'D4nndaD4nn/simple-app'
     REGISTRY_CREDENTIALS = 'dockerhub-credentials'
   }
   stages {
@@ -21,7 +21,8 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS,
             usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           powershell '''
-            $env:DOCKER_PASS | docker login -u "$env:DOCKER_USER" --password-stdin
+            $cleanPass = $env:DOCKER_PASS.Trim()
+            $cleanPass | docker login -u "$env:DOCKER_USER" --password-stdin
             docker push "${env:IMAGE_NAME}:${env:BUILD_NUMBER}"
             docker tag "${env:IMAGE_NAME}:${env:BUILD_NUMBER}" "${env:IMAGE_NAME}:latest"
             docker push "${env:IMAGE_NAME}:latest"
