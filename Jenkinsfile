@@ -1,9 +1,10 @@
 pipeline {
   agent any
   environment {
-    // Menggunakan huruf kecil sesuai akun Docker Hub yang benar (dannd4dann)
     IMAGE_NAME = 'dannd4dann/simple-app'
     REGISTRY_CREDENTIALS = 'dockerhub-credentials'
+    // Kunci utama untuk Windows Service: memaksa Docker melewati pencarian context "desktop-linux" yang error
+    DOCKER_HOST = 'npipe:////./pipe/docker_engine'
   }
   stages {
     stage('Checkout') { 
@@ -19,7 +20,6 @@ pipeline {
     }
     stage('Push Docker Image') {
       steps {
-        // Menggunakan block withDockerRegistry bawaan Jenkins yang aman dari error parsing Windows CLI
         withDockerRegistry(credentialsId: env.REGISTRY_CREDENTIALS, url: '') {
           bat '''
             docker push %IMAGE_NAME%:%BUILD_NUMBER%
