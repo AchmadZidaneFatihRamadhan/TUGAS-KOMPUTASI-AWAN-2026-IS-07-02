@@ -20,18 +20,12 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: env.REGISTRY_CREDENTIALS,
             usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          // Menggunakan PowerShell untuk menghindari korupsi token password di Windows cmd
-          powershell '''
-            $user = $env:DOCKER_USER.Trim()
-            $pass = $env:DOCKER_PASS.Trim()
-
-            # Login Docker Hub menggunakan password-stdin via PowerShell
-            $pass | docker login -u $user --password-stdin
-
-            # Push dan Tag Image ke Docker Hub
-            docker push "${env:IMAGE_NAME}:${env:BUILD_NUMBER}"
-            docker tag "${env:IMAGE_NAME}:${env:BUILD_NUMBER}" "${env:IMAGE_NAME}:latest"
-            docker push "${env:IMAGE_NAME}:latest"
+          // Menjalankan perintah PowerShell dalam bentuk baris tunggal yang aman dari corrupt parsing
+          powershell 'echo $env:DOCKER_PASS | docker login -u $env:DOCKER_USER --password-stdin'
+          bat '''
+            docker push %IMAGE_NAME%:%BUILD_NUMBER%
+            docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
+            docker push %IMAGE_NAME%:latest
           '''
         }
       }
