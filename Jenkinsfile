@@ -18,23 +18,20 @@ pipeline {
     }
     stage('Push Docker Image') {
       steps {
-        // Menggunakan withCredentials standar untuk menghindari context "desktop-linux" error
         withCredentials([usernamePassword(credentialsId: env.REGISTRY_CREDENTIALS,
             usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          bat '''
-            REM Menyimpan password ke file sementara agar terhindar dari korupsi format cmd
-            echo %DOCKER_PASS%> docker_token.txt
-            
-            REM Login Docker Hub langsung ke registry utama
-            docker login -u %DOCKER_USER% --password-stdin < docker_token.txt
-            
-            REM Hapus file token demi keamanan
-            del docker_token.txt
-            
-            REM Push dan Tag Image ke Docker Hub
-            docker push %IMAGE_NAME%:%BUILD_NUMBER%
-            docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
-            docker push %IMAGE_NAME%:latest
+          // Menggunakan PowerShell untuk menghindari korupsi token password di Windows cmd
+          powershell '''
+            $user = $env:DOCKER_USER.Trim()
+            $pass = $env:DOCKER_PASS.Trim()
+
+            # Login Docker Hub menggunakan password-stdin via PowerShell
+            $pass | docker login -u $user --password-stdin
+
+            # Push dan Tag Image ke Docker Hub
+            docker push "${env:IMAGE_NAME}:${env:BUILD_NUMBER}"
+            docker tag "${env:IMAGE_NAME}:${env:BUILD_NUMBER}" "${env:IMAGE_NAME}:latest"
+            docker push "${env:IMAGE_NAME}:latest"
           '''
         }
       }
