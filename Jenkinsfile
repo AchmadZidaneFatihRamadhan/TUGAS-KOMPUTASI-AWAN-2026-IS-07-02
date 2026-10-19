@@ -18,8 +18,8 @@ pipeline {
     }
     stage('Push Docker Image') {
       steps {
-        // Menggunakan helper resmi Jenkins untuk Docker Registry
-        withDockerRegistry(credentialsId: env.REGISTRY_CREDENTIALS, toolName: 'default') {
+        // Diperbaiki: Hanya menggunakan credentialsId tanpa toolName
+        withDockerRegistry(credentialsId: env.REGISTRY_CREDENTIALS) {
           bat '''
             docker push %IMAGE_NAME%:%BUILD_NUMBER%
             docker tag %IMAGE_NAME%:%BUILD_NUMBER% %IMAGE_NAME%:latest
