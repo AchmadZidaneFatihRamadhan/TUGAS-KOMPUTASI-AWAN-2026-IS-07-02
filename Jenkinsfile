@@ -18,9 +18,10 @@ pipeline {
     }
     stage('Push Docker Image') {
       steps {
-        withCredentials([string(credentialsId: REGISTRY_CREDENTIALS, variable: 'DOCKER_PASS')]) {
+        withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS,
+            usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           bat '''
-            echo %DOCKER_PASS% | docker login -u D4nndaD4nn --password-stdin
+            echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
             docker push D4nndaD4nn/simple-app:%BUILD_NUMBER%
             docker tag D4nndaD4nn/simple-app:%BUILD_NUMBER% D4nndaD4nn/simple-app:latest
             docker push D4nndaD4nn/simple-app:latest
