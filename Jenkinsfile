@@ -21,8 +21,11 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS,
             usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           powershell '''
-            $cleanPass = $env:DOCKER_PASS.Trim()
-            $cleanPass | docker login -u "$env:DOCKER_USER" --password-stdin
+            # Membersihkan spasi/newline pada password dan melakukan login langsung
+            $pass = $env:DOCKER_PASS.Trim()
+            & docker login -u "$env:DOCKER_USER" -p "$pass"
+            
+            # Melakukan push dan tag image
             docker push "${env:IMAGE_NAME}:${env:BUILD_NUMBER}"
             docker tag "${env:IMAGE_NAME}:${env:BUILD_NUMBER}" "${env:IMAGE_NAME}:latest"
             docker push "${env:IMAGE_NAME}:latest"
